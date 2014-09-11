@@ -80,7 +80,7 @@ void W5500Class::recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uin
     uint16_t ptr;
     ptr = readSnRX_RD(s);
 
-    read_data(s, (uint8_t *)ptr, data, len);
+    read_data(s, ptr, data, len);
     if (!peek)
     {
         ptr += len;
@@ -88,10 +88,10 @@ void W5500Class::recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uin
     }
 }
 
-void W5500Class::read_data(SOCKET s, volatile uint8_t *src, volatile uint8_t *dst, uint16_t len)
+void W5500Class::read_data(SOCKET s, uint16_t src, volatile uint8_t *dst, uint16_t len)
 {
     uint8_t cntl_byte = (0x18+(s<<5));
-    read((uint16_t)src , cntl_byte, (uint8_t *)dst, len);
+    read(src , cntl_byte, (uint8_t *)dst, len);
 }
 
 uint8_t W5500Class::write(uint16_t _addr, uint8_t _cb, uint8_t _data)
