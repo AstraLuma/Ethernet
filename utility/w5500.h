@@ -10,14 +10,7 @@
 #ifndef	W5500_H_INCLUDED
 #define	W5500_H_INCLUDED
 
-//#include <avr/pgmspace.h>
-//#include <SPI.h>
-
-
 #define MAX_SOCK_NUM 8
-//typedef uint8_t SOCKET;
-
-
 /*
 class MR {
 public:
@@ -135,7 +128,7 @@ public:
    * the data from Receive buffer. Here also take care of the condition while it exceed
    * the Rx memory uper-bound of socket.
    */
-  void read_data(SOCKET s, volatile uint8_t * src, volatile uint8_t * dst, uint16_t len);
+  void read_data(SOCKET s, volatile uint16_t  src, volatile uint8_t * dst, uint16_t len);
   
   /**
    * @brief	 This function is being called by send() and sendto() function also. 
@@ -180,6 +173,9 @@ public:
 
   inline void setRetransmissionTime(uint16_t timeout);
   inline void setRetransmissionCount(uint8_t _retry);
+
+  inline void setPHYCFGR(uint8_t _val);
+  inline uint8_t getPHYCFGR();
 
   void execCmdSn(SOCKET s, SockCMD _cmd);
   
@@ -232,6 +228,8 @@ public:
   __GP_REGISTER8 (RCR,    0x001B);    // Retry count
   __GP_REGISTER_N(UIPR,   0x0028, 4); // Unreachable IP address in UDP mode
   __GP_REGISTER16(UPORT,  0x002C);    // Unreachable Port address in UDP mode
+  __GP_REGISTER8 (PHYCFGR,     0x002E);    // PHY Configuration register, default value: 0b 1011 1xxx
+
   
 #undef __GP_REGISTER8
 #undef __GP_REGISTER16
@@ -324,12 +322,8 @@ private:
   static const uint16_t RSIZE = 2048; // Max Rx buffer size
 
 private:
-#if defined(REL_GR_KURUMI) || defined(REL_GR_KURUMI_PROTOTYPE)
-  inline static void initSS()    { pinMode(SS, OUTPUT); \
-                                   digitalWrite(SS, HIGH); };
-  inline static void setSS()     { digitalWrite(SS, LOW); };
-  inline static void resetSS()   { digitalWrite(SS, HIGH); };
-#elif defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1284P__)
+#if defined(ARDUINO_ARCH_AVR)
+#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1284P__)
   inline static void initSS()    { DDRB  |=  _BV(4); };
   inline static void setSS()     { PORTB &= ~_BV(4); };
   inline static void resetSS()   { PORTB |=  _BV(4); };
@@ -341,12 +335,17 @@ private:
   inline static void initSS()    { DDRB  |=  _BV(0); };
   inline static void setSS()     { PORTB &= ~_BV(0); };
   inline static void resetSS()   { PORTB |=  _BV(0); }; 
+#elif defined(REL_GR_KURUMI) || defined(REL_GR_KURUMI_PROTOTYPE)
+  inline static void initSS()    { pinMode(SS, OUTPUT); \
+                                   digitalWrite(SS, HIGH); };
+  inline static void setSS()     { digitalWrite(SS, LOW); };
+  inline static void resetSS()   { digitalWrite(SS, HIGH); };
 #else
   inline static void initSS()    { DDRB  |=  _BV(2); };
   inline static void setSS()     { PORTB &= ~_BV(2); };
   inline static void resetSS()   { PORTB |=  _BV(2); };
 #endif
-
+#endif // ARDUINO_ARCH_AVR
 };
 
 extern W5500Class W5100;
@@ -409,6 +408,15 @@ void W5500Class::setRetransmissionTime(uint16_t _timeout) {
 
 void W5500Class::setRetransmissionCount(uint8_t _retry) {
   writeRCR(_retry);
+}
+
+void W5500Class::setPHYCFGR(uint8_t _val) {
+  writePHYCFGR(_val);
+}
+
+uint8_t W5500Class::getPHYCFGR() {
+//  readPHYCFGR();
+  return read(0x002E, 0x00);
 }
 
 #endif
