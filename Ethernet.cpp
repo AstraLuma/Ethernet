@@ -2,7 +2,7 @@
  modified 12 Aug 2013
  by Soohwan Kim (suhwan@wiznet.co.kr)
 */
-#include "w5100.h"
+#include "wiznet.h"
 #include "Ethernet.h"
 #include "Dhcp.h"
 

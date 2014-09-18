@@ -1,4 +1,4 @@
-#include "w5100.h"
+#include "wiznet.h"
 #include "socket.h"
 
 extern "C" {

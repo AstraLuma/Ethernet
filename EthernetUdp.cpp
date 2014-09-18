@@ -26,7 +26,7 @@
  * bjoern@cs.stanford.edu 12/30/2008
  */
 
-#include "w5100.h"
+#include "wiznet.h"
 #include "socket.h"
 #include "Ethernet.h"
 #include "Udp.h"
