@@ -10,11 +10,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <avr/interrupt.h>
-#include "w5100.h"
+#include "w5200.h"
 
-#if defined(W5200_ETHERNET_SHIELD)
+#if defined(USE_W5200)
 // W5200 controller instance
-W5200Class W5100;
+W5200Class Wiznet;
+#endif
 
 #define TX_RX_MAX_BUF_SIZE 2048
 #define TX_BUF 0x1100
@@ -24,7 +25,7 @@ W5200Class W5100;
 #define TXBUF_BASE 0x8000
 #define RXBUF_BASE 0xC000
 
-void W5200Class::init(void)
+uint8_t W5200Class::init(void)
 {
   delay(300);
 
@@ -41,6 +42,7 @@ void W5200Class::init(void)
     SBASE[i] = TXBUF_BASE + SSIZE * i;
     RBASE[i] = RXBUF_BASE + RSIZE * i;
   }
+  return 1;
 }
 
 uint16_t W5200Class::getTXFreeSize(SOCKET s)
@@ -101,7 +103,7 @@ void W5200Class::recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uin
 {
   uint16_t ptr;
   ptr = readSnRX_RD(s);
-  read_data(s, (uint8_t *)ptr, data, len);
+  read_data(s, ptr, data, len);
   if (!peek)
   {
     ptr += len;
@@ -109,7 +111,7 @@ void W5200Class::recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uin
   }
 }
 
-void W5200Class::read_data(SOCKET s, volatile uint8_t *src, volatile uint8_t *dst, uint16_t len)
+void W5200Class::read_data(SOCKET s, uint16_t src, volatile uint8_t *dst, uint16_t len)
 {
   uint16_t size;
   uint16_t src_mask;
@@ -130,19 +132,6 @@ void W5200Class::read_data(SOCKET s, volatile uint8_t *src, volatile uint8_t *ds
 }
 
 
-uint8_t W5200Class::write(uint16_t _addr, uint8_t _data)
-{
-  setSS();  
-  
-  SPI.transfer(_addr >> 8);
-  SPI.transfer(_addr & 0xFF);
-  SPI.transfer(0x80);
-  SPI.transfer(0x01); 
-  SPI.transfer(_data);
-  resetSS();
-  return 1;
-}
-
 uint16_t W5200Class::write(uint16_t _addr, const uint8_t *_buf, uint16_t _len)
 {
     if (_len == 0) //Fix: a write request with _len == 0 hangs the W5200
@@ -161,18 +150,6 @@ uint16_t W5200Class::write(uint16_t _addr, const uint8_t *_buf, uint16_t _len)
   }
     resetSS();
   return _len;
-}
-
-uint8_t W5200Class::read(uint16_t _addr)
-{
-  setSS();  
-  SPI.transfer(_addr >> 8);
-  SPI.transfer(_addr & 0xFF);
-  SPI.transfer(0x00);
-  SPI.transfer(0x01); 
-  uint8_t _data = SPI.transfer(0);
-  resetSS();
-  return _data;
 }
 
 uint16_t W5200Class::read(uint16_t _addr, uint8_t *_buf, uint16_t _len)
@@ -199,4 +176,3 @@ void W5200Class::execCmdSn(SOCKET s, SockCMD _cmd) {
   while (readSnCR(s))
     ;
 }
-#endif

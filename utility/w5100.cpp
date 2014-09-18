@@ -18,20 +18,16 @@
 #endif
 #endif
 
+// XXX: Does this need to be configurable?
+#define W5100_SS_PIN    10
+
 #include "Arduino.h"
 
 #include "w5100.h"
 
-#if defined(W5100_ETHERNET_SHIELD)
-
-// W5100 controller instance
-uint16_t W5100Class::SBASE[MAX_SOCK_NUM];
-uint16_t W5100Class::RBASE[MAX_SOCK_NUM];
-uint16_t W5100Class::CH_BASE;
-uint16_t W5100Class::SSIZE;
-uint16_t W5100Class::SMASK;
-uint8_t  W5100Class::chip;
-W5100Class W5100;
+#if defined(USE_W5100)
+W5100Class Wiznet;
+#endif
 
 #define TX_RX_MAX_BUF_SIZE 2048
 #define TX_BUF 0x1100
@@ -40,15 +36,14 @@ W5100Class W5100;
 #define TXBUF_BASE 0x4000
 #define RXBUF_BASE 0x6000
 
-void W5100Class::init(void)
+uint8_t W5100Class::init(void)
 {
-  uint8_t i;
   delay(300);
   //Serial.println("w5100 init");
 
 #ifdef USE_SPIFIFO
   SPI.begin();
-  SPIFIFO.begin(W5200_SS_PIN, SPI_CLOCK_12MHz);  // W5100 is 14 MHz max
+  SPIFIFO.begin(W5100_SS_PIN, SPI_CLOCK_12MHz);  // W5100 is 14 MHz max
 #else
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV2);
@@ -184,18 +179,6 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
   return len;
 }
 #else
-uint8_t W5100Class::write(uint16_t _addr, uint8_t _data)
-{
-  setSS();  
-  SPI.transfer(0xF0);
-  SPI.transfer(_addr >> 8);
-  SPI.transfer(_addr & 0xFF);
-  SPI.transfer(_data);
-  resetSS();
-  return 1;
-}
-#endif
-
 uint16_t W5100Class::write(uint16_t _addr, const uint8_t *_buf, uint16_t _len)
 {
   for (uint16_t i=0; i<_len; i++)
@@ -210,7 +193,6 @@ uint16_t W5100Class::write(uint16_t _addr, const uint8_t *_buf, uint16_t _len)
   }
   return _len;
 }
-
 #endif
 
 #ifdef USE_SPIFIFO

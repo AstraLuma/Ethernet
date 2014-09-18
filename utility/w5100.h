@@ -229,8 +229,8 @@ public:
   static const uint16_t SSIZE = 2048; // Max Tx buffer size
 private:
   static const uint16_t RSIZE = 2048; // Max Rx buffer size
-  uint16_t SBASE[SOCKETS]; // Tx buffer base address
-  uint16_t RBASE[SOCKETS]; // Rx buffer base address
+  static uint16_t SBASE[SOCKETS]; // Tx buffer base address
+  static uint16_t RBASE[SOCKETS]; // Rx buffer base address
 
 private:
     

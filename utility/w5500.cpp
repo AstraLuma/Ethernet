@@ -11,14 +11,15 @@
 #include <string.h>
 #include <avr/interrupt.h>
 
-#include "w5100.h"
-#if defined(W5500_ETHERNET_SHIELD)
+#include "w5500.h"
 
+#if defined(USE_W5500)
 // W5500 controller instance
-W5500Class W5100;
+W5500Class Wiznet;
+#endif
 
 
-void W5500Class::init(void)
+uint8_t W5500Class::init(void)
 {
 
     initSS();
@@ -150,4 +151,3 @@ void W5500Class::execCmdSn(SOCKET s, SockCMD _cmd) {
     while (readSnCR(s))
     ;
 }
-#endif
