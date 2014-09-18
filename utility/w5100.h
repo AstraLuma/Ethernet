@@ -262,7 +262,7 @@ private:
 
 };
 
-extern W5100Class W5100;
+extern W5100Class Wiznet;
 
 
 #endif // W5100_H_INCLUDED

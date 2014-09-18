@@ -10,7 +10,7 @@ extern void yield(void);
 static uint16_t local_port;
 
 /**
- * @brief	This Socket function initialize the channel in perticular mode, and set the port and wait for W5100 done it.
+ * @brief	This Socket function initialize the channel in perticular mode, and set the port and wait for Wiznet done it.
  * @return 	1 for success else 0.
  */
 uint8_t socket(SOCKET s, uint8_t protocol, uint16_t port, uint8_t flag)
@@ -19,15 +19,15 @@ uint8_t socket(SOCKET s, uint8_t protocol, uint16_t port, uint8_t flag)
   {
     close(s);
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-    W5100.writeSnMR(s, protocol | flag);
+    Wiznet.writeSnMR(s, protocol | flag);
     if (port != 0) {
-      W5100.writeSnPORT(s, port);
+      Wiznet.writeSnPORT(s, port);
     } 
     else {
       local_port++; // if don't set the source port, set local_port number.
-      W5100.writeSnPORT(s, local_port);
+      Wiznet.writeSnPORT(s, local_port);
     }
-    W5100.execCmdSn(s, Sock_OPEN);
+    Wiznet.execCmdSn(s, Sock_OPEN);
     SPI.endTransaction();
     return 1;
   }
@@ -39,7 +39,7 @@ uint8_t socket(SOCKET s, uint8_t protocol, uint16_t port, uint8_t flag)
 uint8_t socketStatus(SOCKET s)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  uint8_t status = W5100.readSnSR(s);
+  uint8_t status = Wiznet.readSnSR(s);
   SPI.endTransaction();
   return status;
 }
@@ -51,8 +51,8 @@ uint8_t socketStatus(SOCKET s)
 void close(SOCKET s)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.execCmdSn(s, Sock_CLOSE);
-  W5100.writeSnIR(s, 0xFF);
+  Wiznet.execCmdSn(s, Sock_CLOSE);
+  Wiznet.writeSnIR(s, 0xFF);
   SPI.endTransaction();
 }
 
@@ -64,11 +64,11 @@ void close(SOCKET s)
 uint8_t listen(SOCKET s)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  if (W5100.readSnSR(s) != SnSR::INIT) {
+  if (Wiznet.readSnSR(s) != SnSR::INIT) {
     SPI.endTransaction();
     return 0;
   }
-  W5100.execCmdSn(s, Sock_LISTEN);
+  Wiznet.execCmdSn(s, Sock_LISTEN);
   SPI.endTransaction();
   return 1;
 }
@@ -92,9 +92,9 @@ uint8_t connect(SOCKET s, uint8_t * addr, uint16_t port)
 
   // set destination IP
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.writeSnDIPR(s, addr);
-  W5100.writeSnDPORT(s, port);
-  W5100.execCmdSn(s, Sock_CONNECT);
+  Wiznet.writeSnDIPR(s, addr);
+  Wiznet.writeSnDPORT(s, port);
+  Wiznet.execCmdSn(s, Sock_CONNECT);
   SPI.endTransaction();
 
   return 1;
@@ -109,7 +109,7 @@ uint8_t connect(SOCKET s, uint8_t * addr, uint16_t port)
 void disconnect(SOCKET s)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.execCmdSn(s, Sock_DISCON);
+  Wiznet.execCmdSn(s, Sock_DISCON);
   SPI.endTransaction();
 }
 
@@ -124,8 +124,8 @@ uint16_t send(SOCKET s, const uint8_t * buf, uint16_t len)
   uint16_t ret=0;
   uint16_t freesize=0;
 
-  if (len > W5100.SSIZE) 
-    ret = W5100.SSIZE; // check size not to exceed MAX size.
+  if (len > Wiznet.SSIZE) 
+    ret = Wiznet.SSIZE; // check size not to exceed MAX size.
   else 
     ret = len;
 
@@ -133,8 +133,8 @@ uint16_t send(SOCKET s, const uint8_t * buf, uint16_t len)
   do 
   {
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-    freesize = W5100.getTXFreeSize(s);
-    status = W5100.readSnSR(s);
+    freesize = Wiznet.getTXFreeSize(s);
+    status = Wiznet.readSnSR(s);
     SPI.endTransaction();
     if ((status != SnSR::ESTABLISHED) && (status != SnSR::CLOSE_WAIT))
     {
@@ -147,14 +147,14 @@ uint16_t send(SOCKET s, const uint8_t * buf, uint16_t len)
 
   // copy data
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.send_data_processing(s, (uint8_t *)buf, ret);
-  W5100.execCmdSn(s, Sock_SEND);
+  Wiznet.send_data_processing(s, (uint8_t *)buf, ret);
+  Wiznet.execCmdSn(s, Sock_SEND);
 
   /* +2008.01 bj */
-  while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
+  while ( (Wiznet.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
   {
     /* m2008.01 [bj] : reduce code */
-    if ( W5100.readSnSR(s) == SnSR::CLOSED )
+    if ( Wiznet.readSnSR(s) == SnSR::CLOSED )
     {
       SPI.endTransaction();
       close(s);
@@ -165,7 +165,7 @@ uint16_t send(SOCKET s, const uint8_t * buf, uint16_t len)
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   }
   /* +2008.01 bj */
-  W5100.writeSnIR(s, SnIR::SEND_OK);
+  Wiznet.writeSnIR(s, SnIR::SEND_OK);
   SPI.endTransaction();
   return ret;
 }
@@ -181,11 +181,11 @@ int16_t recv(SOCKET s, uint8_t *buf, int16_t len)
 {
   // Check how much data is available
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  int16_t ret = W5100.getRXReceivedSize(s);
+  int16_t ret = Wiznet.getRXReceivedSize(s);
   if ( ret == 0 )
   {
     // No data available.
-    uint8_t status = W5100.readSnSR(s);
+    uint8_t status = Wiznet.readSnSR(s);
     if ( status == SnSR::LISTEN || status == SnSR::CLOSED || status == SnSR::CLOSE_WAIT )
     {
       // The remote end has closed its side of the connection, so this is the eof state
@@ -204,8 +204,8 @@ int16_t recv(SOCKET s, uint8_t *buf, int16_t len)
 
   if ( ret > 0 )
   {
-    W5100.recv_data_processing(s, buf, ret);
-    W5100.execCmdSn(s, Sock_RECV);
+    Wiznet.recv_data_processing(s, buf, ret);
+    Wiznet.execCmdSn(s, Sock_RECV);
   }
   SPI.endTransaction();
   return ret;
@@ -215,7 +215,7 @@ int16_t recv(SOCKET s, uint8_t *buf, int16_t len)
 int16_t recvAvailable(SOCKET s)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  int16_t ret = W5100.getRXReceivedSize(s);
+  int16_t ret = Wiznet.getRXReceivedSize(s);
   SPI.endTransaction();
   return ret;
 }
@@ -229,7 +229,7 @@ int16_t recvAvailable(SOCKET s)
 uint16_t peek(SOCKET s, uint8_t *buf)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.recv_data_processing(s, buf, 1, 1);
+  Wiznet.recv_data_processing(s, buf, 1, 1);
   SPI.endTransaction();
   return 1;
 }
@@ -245,7 +245,7 @@ uint16_t sendto(SOCKET s, const uint8_t *buf, uint16_t len, uint8_t *addr, uint1
 {
   uint16_t ret=0;
 
-  if (len > W5100.SSIZE) ret = W5100.SSIZE; // check size not to exceed MAX size.
+  if (len > Wiznet.SSIZE) ret = Wiznet.SSIZE; // check size not to exceed MAX size.
   else ret = len;
 
   if
@@ -260,20 +260,20 @@ uint16_t sendto(SOCKET s, const uint8_t *buf, uint16_t len, uint8_t *addr, uint1
   else
   {
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-    W5100.writeSnDIPR(s, addr);
-    W5100.writeSnDPORT(s, port);
+    Wiznet.writeSnDIPR(s, addr);
+    Wiznet.writeSnDPORT(s, port);
 
     // copy data
-    W5100.send_data_processing(s, (uint8_t *)buf, ret);
-    W5100.execCmdSn(s, Sock_SEND);
+    Wiznet.send_data_processing(s, (uint8_t *)buf, ret);
+    Wiznet.execCmdSn(s, Sock_SEND);
 
     /* +2008.01 bj */
-    while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
+    while ( (Wiznet.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
     {
-      if (W5100.readSnIR(s) & SnIR::TIMEOUT)
+      if (Wiznet.readSnIR(s) & SnIR::TIMEOUT)
       {
         /* +2008.01 [bj]: clear interrupt */
-        W5100.writeSnIR(s, (SnIR::SEND_OK | SnIR::TIMEOUT)); /* clear SEND_OK & TIMEOUT */
+        Wiznet.writeSnIR(s, (SnIR::SEND_OK | SnIR::TIMEOUT)); /* clear SEND_OK & TIMEOUT */
         SPI.endTransaction();
         return 0;
       }
@@ -283,7 +283,7 @@ uint16_t sendto(SOCKET s, const uint8_t *buf, uint16_t len, uint8_t *addr, uint1
     }
 
     /* +2008.01 bj */
-    W5100.writeSnIR(s, SnIR::SEND_OK);
+    Wiznet.writeSnIR(s, SnIR::SEND_OK);
     SPI.endTransaction();
   }
   return ret;
@@ -305,11 +305,11 @@ uint16_t recvfrom(SOCKET s, uint8_t *buf, uint16_t len, uint8_t *addr, uint16_t 
   if ( len > 0 )
   {
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-    ptr = W5100.readSnRX_RD(s);
-    switch (W5100.readSnMR(s) & 0x07)
+    ptr = Wiznet.readSnRX_RD(s);
+    switch (Wiznet.readSnMR(s) & 0x07)
     {
     case SnMR::UDP :
-      W5100.read_data(s, ptr, head, 0x08);
+      Wiznet.read_data(s, ptr, head, 0x08);
       ptr += 8;
       // read peer's IP address, port number.
       addr[0] = head[0];
@@ -321,14 +321,14 @@ uint16_t recvfrom(SOCKET s, uint8_t *buf, uint16_t len, uint8_t *addr, uint16_t 
       data_len = head[6];
       data_len = (data_len << 8) + head[7];
 
-      W5100.read_data(s, ptr, buf, data_len); // data copy.
+      Wiznet.read_data(s, ptr, buf, data_len); // data copy.
       ptr += data_len;
 
-      W5100.writeSnRX_RD(s, ptr);
+      Wiznet.writeSnRX_RD(s, ptr);
       break;
 
     case SnMR::IPRAW :
-      W5100.read_data(s, ptr, head, 0x06);
+      Wiznet.read_data(s, ptr, head, 0x06);
       ptr += 6;
 
       addr[0] = head[0];
@@ -338,27 +338,27 @@ uint16_t recvfrom(SOCKET s, uint8_t *buf, uint16_t len, uint8_t *addr, uint16_t 
       data_len = head[4];
       data_len = (data_len << 8) + head[5];
 
-      W5100.read_data(s, ptr, buf, data_len); // data copy.
+      Wiznet.read_data(s, ptr, buf, data_len); // data copy.
       ptr += data_len;
 
-      W5100.writeSnRX_RD(s, ptr);
+      Wiznet.writeSnRX_RD(s, ptr);
       break;
 
     case SnMR::MACRAW:
-      W5100.read_data(s,ptr,head,2);
+      Wiznet.read_data(s,ptr,head,2);
       ptr+=2;
       data_len = head[0];
       data_len = (data_len<<8) + head[1] - 2;
 
-      W5100.read_data(s,ptr,buf,data_len);
+      Wiznet.read_data(s,ptr,buf,data_len);
       ptr += data_len;
-      W5100.writeSnRX_RD(s, ptr);
+      Wiznet.writeSnRX_RD(s, ptr);
       break;
 
     default :
       break;
     }
-    W5100.execCmdSn(s, Sock_RECV);
+    Wiznet.execCmdSn(s, Sock_RECV);
     SPI.endTransaction();
   }
   return data_len;
@@ -369,8 +369,8 @@ uint16_t igmpsend(SOCKET s, const uint8_t * buf, uint16_t len)
 {
   uint16_t ret=0;
 
-  if (len > W5100.SSIZE) 
-    ret = W5100.SSIZE; // check size not to exceed MAX size.
+  if (len > Wiznet.SSIZE) 
+    ret = Wiznet.SSIZE; // check size not to exceed MAX size.
   else 
     ret = len;
 
@@ -378,12 +378,12 @@ uint16_t igmpsend(SOCKET s, const uint8_t * buf, uint16_t len)
     return 0;
 
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.send_data_processing(s, (uint8_t *)buf, ret);
-  W5100.execCmdSn(s, Sock_SEND);
+  Wiznet.send_data_processing(s, (uint8_t *)buf, ret);
+  Wiznet.execCmdSn(s, Sock_SEND);
 
-  while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
+  while ( (Wiznet.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
   {
-    if (W5100.readSnIR(s) & SnIR::TIMEOUT)
+    if (Wiznet.readSnIR(s) & SnIR::TIMEOUT)
     {
       /* in case of igmp, if send fails, then socket closed */
       /* if you want change, remove this code. */
@@ -396,7 +396,7 @@ uint16_t igmpsend(SOCKET s, const uint8_t * buf, uint16_t len)
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   }
 
-  W5100.writeSnIR(s, SnIR::SEND_OK);
+  Wiznet.writeSnIR(s, SnIR::SEND_OK);
   SPI.endTransaction();
   return ret;
 }
@@ -405,15 +405,15 @@ uint16_t bufferData(SOCKET s, uint16_t offset, const uint8_t* buf, uint16_t len)
 {
   uint16_t ret =0;
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  if (len > W5100.getTXFreeSize(s))
+  if (len > Wiznet.getTXFreeSize(s))
   {
-    ret = W5100.getTXFreeSize(s); // check size not to exceed MAX size.
+    ret = Wiznet.getTXFreeSize(s); // check size not to exceed MAX size.
   }
   else
   {
     ret = len;
   }
-  W5100.send_data_processing_offset(s, offset, buf, ret);
+  Wiznet.send_data_processing_offset(s, offset, buf, ret);
   SPI.endTransaction();
   return ret;
 }
@@ -431,8 +431,8 @@ int startUDP(SOCKET s, uint8_t* addr, uint16_t port)
   else
   {
     SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-    W5100.writeSnDIPR(s, addr);
-    W5100.writeSnDPORT(s, port);
+    Wiznet.writeSnDIPR(s, addr);
+    Wiznet.writeSnDPORT(s, port);
     SPI.endTransaction();
     return 1;
   }
@@ -441,15 +441,15 @@ int startUDP(SOCKET s, uint8_t* addr, uint16_t port)
 int sendUDP(SOCKET s)
 {
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
-  W5100.execCmdSn(s, Sock_SEND);
+  Wiznet.execCmdSn(s, Sock_SEND);
 		
   /* +2008.01 bj */
-  while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
+  while ( (Wiznet.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
   {
-    if (W5100.readSnIR(s) & SnIR::TIMEOUT)
+    if (Wiznet.readSnIR(s) & SnIR::TIMEOUT)
     {
       /* +2008.01 [bj]: clear interrupt */
-      W5100.writeSnIR(s, (SnIR::SEND_OK|SnIR::TIMEOUT));
+      Wiznet.writeSnIR(s, (SnIR::SEND_OK|SnIR::TIMEOUT));
       SPI.endTransaction();
       return 0;
     }
@@ -459,7 +459,7 @@ int sendUDP(SOCKET s)
   }
 
   /* +2008.01 bj */	
-  W5100.writeSnIR(s, SnIR::SEND_OK);
+  Wiznet.writeSnIR(s, SnIR::SEND_OK);
   SPI.endTransaction();
 
   /* Sent ok */

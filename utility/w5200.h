@@ -253,6 +253,6 @@ private:
 
 };
 
-extern W5200Class W5100;
+extern W5200Class Wiznet;
 
 #endif

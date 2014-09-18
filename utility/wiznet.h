@@ -4,6 +4,8 @@ Entry point to the wiznet drivers
 #ifndef	WIZNET_H_INCLUDED
 #define	WIZNET_H_INCLUDED
 
+// FIXME: If I ever want this to be included in mainline Arduino, need a better way to select which chip to use
+
 #include "_wiznet.h"
 
 //#define USE_W5100 // Arduino Ethenret Shield and Compatibles ...

@@ -10,14 +10,14 @@
 #ifndef	W5500_H_INCLUDED
 #define	W5500_H_INCLUDED
 
-#define MAX_SOCK_NUM 8
-
 #include "_wiznet.h"
+ 
+#define MAX_SOCK_NUM 8
 
 class W5500Class {
 
 public:
-  void init();
+  static uint8_t init(void);
 
   /**
    * @brief	This function is being used for copy the data form Receive buffer of the chip to application buffer.
@@ -26,7 +26,7 @@ public:
    * the data from Receive buffer. Here also take care of the condition while it exceed
    * the Rx memory uper-bound of socket.
    */
-  void read_data(SOCKET s, uint16_t src, volatile uint8_t * dst, uint16_t len);
+  static void read_data(SOCKET s, uint16_t src, volatile uint8_t * dst, uint16_t len);
   
   /**
    * @brief	 This function is being called by send() and sendto() function also. 
@@ -34,7 +34,7 @@ public:
    * This function read the Tx write pointer register and after copy the data in buffer update the Tx write pointer
    * register. User should read upper byte first and lower byte later to get proper value.
    */
-  void send_data_processing(SOCKET s, const uint8_t *data, uint16_t len);
+  static void send_data_processing(SOCKET s, const uint8_t *data, uint16_t len);
   /**
    * @brief A copy of send_data_processing that uses the provided ptr for the
    *        write offset.  Only needed for the "streaming" UDP API, where
@@ -45,8 +45,8 @@ public:
    *        in from TX_WR
    * @return New value for ptr, to be used in the next call
    */
-  // FIXME Update documentation
-  void send_data_processing_offset(SOCKET s, uint16_t data_offset, const uint8_t *data, uint16_t len);
+// FIXME Update documentation
+  static void send_data_processing_offset(SOCKET s, uint16_t data_offset, const uint8_t *data, uint16_t len);
 
   /**
    * @brief	This function is being called by recv() also.
@@ -72,10 +72,10 @@ public:
   inline void setRetransmissionTime(uint16_t timeout);
   inline void setRetransmissionCount(uint8_t _retry);
 
-  void execCmdSn(SOCKET s, SockCMD _cmd);
+  static void execCmdSn(SOCKET s, SockCMD _cmd);
   
-  uint16_t getTXFreeSize(SOCKET s);
-  uint16_t getRXReceivedSize(SOCKET s);
+  static uint16_t getTXFreeSize(SOCKET s);
+  static uint16_t getRXReceivedSize(SOCKET s);
   
 
   // W5500 Registers
@@ -240,8 +240,6 @@ private:
 
 };
 
-extern W5500Class W5100;
-
 uint8_t W5500Class::readSn(SOCKET _s, uint16_t _addr) {
     uint8_t cntl_byte = (_s<<5)+0x08;
     return read(_addr, cntl_byte);
@@ -301,5 +299,7 @@ void W5500Class::setRetransmissionTime(uint16_t _timeout) {
 void W5500Class::setRetransmissionCount(uint8_t _retry) {
   writeRCR(_retry);
 }
+
+extern W5500Class Wiznet;
 
 #endif
