@@ -1,7 +1,7 @@
 #ifndef	_SOCKET_H_
 #define	_SOCKET_H_
 
-#include "w5100.h"
+#include "_wiznet.h"
 
 extern uint8_t socket(SOCKET s, uint8_t protocol, uint16_t port, uint8_t flag); // Opens a socket(TCP or UDP or IP_RAW mode)
 extern uint8_t socketStatus(SOCKET s);

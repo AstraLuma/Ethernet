@@ -117,4 +117,4 @@ public:
   static const uint8_t RAW  = 255;
 };
 
-#endif _WIZNET_H_INCLUDED
+#endif // _WIZNET_H_INCLUDED

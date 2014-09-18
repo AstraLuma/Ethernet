@@ -254,11 +254,6 @@ private:
   inline static void initSS()    { pinMode(10, OUTPUT); };
   inline static void setSS()     { digitalWriteFast(10, LOW); };
   inline static void resetSS()   { digitalWriteFast(10, HIGH); };
-#elif defined(REL_GR_KURUMI) || defined(REL_GR_KURUMI_PROTOTYPE)
-  inline static void initSS()    { pinMode(SS, OUTPUT); \
-                                   digitalWrite(SS, HIGH); };
-  inline static void setSS()     { digitalWrite(SS, LOW); };
-  inline static void resetSS()   { digitalWrite(SS, HIGH); };
 #else
   inline static void initSS()    { DDRB  |=  _BV(2); };
   inline static void setSS()     { PORTB &= ~_BV(2); };
@@ -269,8 +264,5 @@ private:
 
 extern W5100Class W5100;
 
-
-
-#endif //defined(W5100_ETHERNET_SHIELD)
 
 #endif // W5100_H_INCLUDED

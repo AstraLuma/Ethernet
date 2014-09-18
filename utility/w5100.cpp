@@ -263,5 +263,3 @@ void W5100Class::execCmdSn(SOCKET s, SockCMD _cmd) {
   while (readSnCR(s))
     ;
 }
-
-#endif // defined(W5100_ETHERNET_SHIELD)

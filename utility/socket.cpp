@@ -1,4 +1,4 @@
-#include "w5100.h"
+#include "wiznet.h"
 #include "socket.h"
 
 #if ARDUINO >= 156 || TEENSYDUINO >= 120
