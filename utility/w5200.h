@@ -57,20 +57,20 @@ public:
    */
   static void recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uint8_t peek = 0);
 
-  inline void setGatewayIp(uint8_t *_addr);
-  inline void getGatewayIp(uint8_t *_addr);
+  inline void setGatewayIp(uint8_t *_addr) { writeGAR(_addr); }
+  inline void getGatewayIp(uint8_t *_addr) {  readGAR(_addr); }
 
-  inline void setSubnetMask(uint8_t *_addr);
-  inline void getSubnetMask(uint8_t *_addr);
+  inline void setSubnetMask(uint8_t *_addr) { writeSUBR(_addr); }
+  inline void getSubnetMask(uint8_t *_addr) {  readSUBR(_addr); }
 
-  inline void setMACAddress(uint8_t * addr);
-  inline void getMACAddress(uint8_t * addr);
+  inline void setMACAddress(uint8_t * _addr) { writeSHAR(_addr); }
+  inline void getMACAddress(uint8_t * _addr) {  readSHAR(_addr); }
 
-  inline void setIPAddress(uint8_t * addr);
-  inline void getIPAddress(uint8_t * addr);
+  inline void setIPAddress(uint8_t * _addr) {  writeSIPR(_addr); }
+  inline void getIPAddress(uint8_t * _addr) {  readSIPR(_addr); }
 
-  inline void setRetransmissionTime(uint16_t timeout);
-  inline void setRetransmissionCount(uint8_t _retry);
+  inline void setRetransmissionTime(uint16_t _timeout) { writeRTR(_timeout); }
+  inline void setRetransmissionCount(uint8_t _retry) { writeRCR(_retry); }
 
   static void execCmdSn(SOCKET s, SockCMD _cmd);
   
