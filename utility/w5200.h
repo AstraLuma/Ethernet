@@ -154,8 +154,8 @@ private:
   }
 
 
-  static const uint16_t CH_BASE = 0x4000;
-  static const uint16_t CH_SIZE = 0x0100;
+  static const uint16_t CH_BASE;
+  static const uint16_t CH_SIZE;
 
 #define __SOCKET_REGISTER8(name, address)                    \
   static inline void write##name(SOCKET _s, uint8_t _data) { \

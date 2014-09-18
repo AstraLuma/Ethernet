@@ -25,6 +25,11 @@ W5200Class Wiznet;
 #define TXBUF_BASE 0x8000
 #define RXBUF_BASE 0xC000
 
+const uint16_t W5200Class::CH_BASE = 0x4000;
+const uint16_t W5200Class::CH_SIZE = 0x0100;
+uint16_t W5200Class::SBASE[W5200Class::SOCKETS] = {0,};
+uint16_t W5200Class::RBASE[W5200Class::SOCKETS] = {0,};
+
 uint8_t W5200Class::init(void)
 {
   delay(300);

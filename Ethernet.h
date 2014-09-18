@@ -6,6 +6,7 @@
 #define ethernet_h
 
 #include <inttypes.h>
+#include "wiznet.h"
 #include "IPAddress.h"
 #include "EthernetClient.h"
 #include "EthernetServer.h"
