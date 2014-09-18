@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 by WIZnet <support@wiznet.co.kr>
+ * Copyright (c) 2010 by Cristian Maglie <c.maglie@bug.st>
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of either the GNU General Public License version 2
@@ -12,6 +12,8 @@
 
 #include <avr/pgmspace.h>
 #include <SPI.h>
+
+#define SPI_ETHERNET_SETTINGS SPISettings(14000000, MSBFIRST, SPI_MODE0)
 
 typedef uint8_t SOCKET;
 
@@ -143,7 +145,7 @@ public:
 class W5100Class {
 
 public:
-  void init();
+  static uint8_t init(void);
 
   /**
    * @brief	This function is being used for copy the data form Receive buffer of the chip to application buffer.
@@ -152,7 +154,7 @@ public:
    * the data from Receive buffer. Here also take care of the condition while it exceed
    * the Rx memory uper-bound of socket.
    */
-  void read_data(SOCKET s, volatile uint8_t * src, volatile uint8_t * dst, uint16_t len);
+  static void read_data(SOCKET s, uint16_t src, volatile uint8_t * dst, uint16_t len);
   
   /**
    * @brief	 This function is being called by send() and sendto() function also. 
@@ -160,7 +162,7 @@ public:
    * This function read the Tx write pointer register and after copy the data in buffer update the Tx write pointer
    * register. User should read upper byte first and lower byte later to get proper value.
    */
-  void send_data_processing(SOCKET s, const uint8_t *data, uint16_t len);
+  static void send_data_processing(SOCKET s, const uint8_t *data, uint16_t len);
   /**
    * @brief A copy of send_data_processing that uses the provided ptr for the
    *        write offset.  Only needed for the "streaming" UDP API, where
@@ -172,7 +174,7 @@ public:
    * @return New value for ptr, to be used in the next call
    */
 // FIXME Update documentation
-  void send_data_processing_offset(SOCKET s, uint16_t data_offset, const uint8_t *data, uint16_t len);
+  static void send_data_processing_offset(SOCKET s, uint16_t data_offset, const uint8_t *data, uint16_t len);
 
   /**
    * @brief	This function is being called by recv() also.
@@ -181,36 +183,42 @@ public:
    * and after copy the data from receive buffer update the Rx write pointer register.
    * User should read upper byte first and lower byte later to get proper value.
    */
-  void recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uint8_t peek = 0);
+  static void recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uint8_t peek = 0);
 
-  inline void setGatewayIp(uint8_t *_addr);
-  inline void getGatewayIp(uint8_t *_addr);
+  inline void setGatewayIp(uint8_t * addr) { writeGAR(addr); }
+  inline void getGatewayIp(uint8_t * addr) { readGAR(addr); }
 
-  inline void setSubnetMask(uint8_t *_addr);
-  inline void getSubnetMask(uint8_t *_addr);
+  inline void setSubnetMask(uint8_t * addr) { writeSUBR(addr); }
+  inline void getSubnetMask(uint8_t * addr) { readSUBR(addr); }
 
-  inline void setMACAddress(uint8_t * addr);
-  inline void getMACAddress(uint8_t * addr);
+  inline void setMACAddress(uint8_t * addr) { writeSHAR(addr); }
+  inline void getMACAddress(uint8_t * addr) { readSHAR(addr); }
 
-  inline void setIPAddress(uint8_t * addr);
-  inline void getIPAddress(uint8_t * addr);
+  inline void setIPAddress(uint8_t * addr) { writeSIPR(addr); }
+  inline void getIPAddress(uint8_t * addr) { readSIPR(addr); }
 
-  inline void setRetransmissionTime(uint16_t timeout);
-  inline void setRetransmissionCount(uint8_t _retry);
+  inline void setRetransmissionTime(uint16_t timeout) { writeRTR(timeout); }
+  inline void setRetransmissionCount(uint8_t retry) { writeRCR(retry); }
 
-  void execCmdSn(SOCKET s, SockCMD _cmd);
+  static void execCmdSn(SOCKET s, SockCMD _cmd);
   
-  uint16_t getTXFreeSize(SOCKET s);
-  uint16_t getRXReceivedSize(SOCKET s);
+  static uint16_t getTXFreeSize(SOCKET s);
+  static uint16_t getRXReceivedSize(SOCKET s);
   
 
   // W5100 Registers
   // ---------------
 private:
-  static uint8_t write(uint16_t _addr, uint8_t _data);
   static uint16_t write(uint16_t addr, const uint8_t *buf, uint16_t len);
-  static uint8_t read(uint16_t addr);
+  static uint8_t write(uint16_t addr, uint8_t data) {
+    return write(addr, &data, 1);
+  }
   static uint16_t read(uint16_t addr, uint8_t *buf, uint16_t len);
+  static uint8_t read(uint16_t addr) {
+    uint8_t data;
+    read(addr, &data, 1);
+    return data;
+  }
   
 #define __GP_REGISTER8(name, address)             \
   static inline void write##name(uint8_t _data) { \
@@ -221,13 +229,15 @@ private:
   }
 #define __GP_REGISTER16(name, address)            \
   static void write##name(uint16_t _data) {       \
-    write(address,   _data >> 8);                 \
-    write(address+1, _data & 0xFF);               \
+    uint8_t buf[2];                               \
+    buf[0] = _data >> 8;                          \
+    buf[1] = _data & 0xFF;                        \
+    write(address, buf, 2);                       \
   }                                               \
   static uint16_t read##name() {                  \
-    uint16_t res = read(address);                 \
-    res = (res << 8) + read(address + 1);         \
-    return res;                                   \
+    uint8_t buf[2];                               \
+    read(address, buf, 2);                        \
+    return (buf[0] << 8) | buf[1];                \
   }
 #define __GP_REGISTER_N(name, address, size)      \
   static uint16_t write##name(uint8_t *_buff) {   \
@@ -262,12 +272,20 @@ public:
   // W5100 Socket registers
   // ----------------------
 private:
-  static inline uint8_t readSn(SOCKET _s, uint16_t _addr);
-  static inline uint8_t writeSn(SOCKET _s, uint16_t _addr, uint8_t _data);
-  static inline uint16_t readSn(SOCKET _s, uint16_t _addr, uint8_t *_buf, uint16_t len);
-  static inline uint16_t writeSn(SOCKET _s, uint16_t _addr, uint8_t *_buf, uint16_t len);
+  static inline uint8_t readSn(SOCKET s, uint16_t addr) {
+    return read(CH_BASE + s * CH_SIZE + addr);
+  }
+  static inline uint8_t writeSn(SOCKET s, uint16_t addr, uint8_t data) {
+    return write(CH_BASE + s * CH_SIZE + addr, data);
+  }
+  static inline uint16_t readSn(SOCKET s, uint16_t addr, uint8_t *buf, uint16_t len) {
+    return read(CH_BASE + s * CH_SIZE + addr, buf, len);
+  }
+  static inline uint16_t writeSn(SOCKET s, uint16_t addr, uint8_t *buf, uint16_t len) {
+    return write(CH_BASE + s * CH_SIZE + addr, buf, len);
+  }
 
-  static const uint16_t CH_BASE = 0x0400;
+  static uint16_t CH_BASE;
   static const uint16_t CH_SIZE = 0x0100;
 
 #define __SOCKET_REGISTER8(name, address)                    \
@@ -279,16 +297,15 @@ private:
   }
 #define __SOCKET_REGISTER16(name, address)                   \
   static void write##name(SOCKET _s, uint16_t _data) {       \
-    writeSn(_s, address,   _data >> 8);                      \
-    writeSn(_s, address+1, _data & 0xFF);                    \
+    uint8_t buf[2];                                          \
+    buf[0] = _data >> 8;                                     \
+    buf[1] = _data & 0xFF;                                   \
+    writeSn(_s, address, buf, 2);                            \
   }                                                          \
   static uint16_t read##name(SOCKET _s) {                    \
-    uint16_t res = readSn(_s, address);                      \
-    uint16_t res2 = readSn(_s,address + 1);                  \
-    res = res << 8;                                          \
-    res2 = res2 & 0xFF;                                      \
-    res = res | res2;                                        \
-    return res;                                              \
+    uint8_t buf[2];                                          \
+    readSn(_s, address, buf, 2);                             \
+    return (buf[0] << 8) | buf[1];                           \
   }
 #define __SOCKET_REGISTER_N(name, address, size)             \
   static uint16_t write##name(SOCKET _s, uint8_t *_buff) {   \
@@ -324,6 +341,8 @@ public:
 
 
 private:
+  static void reset(void);
+
   static const uint8_t  RST = 7; // Reset BIT
 
   static const int SOCKETS = 4;
@@ -342,6 +361,10 @@ private:
   inline static void initSS()    { DDRB  |=  _BV(4); };
   inline static void setSS()     { PORTB &= ~_BV(4); };
   inline static void resetSS()   { PORTB |=  _BV(4); };
+#elif defined(__AVR_ATmega32U4__) && defined(CORE_TEENSY)
+  inline static void initSS()    { DDRB  |=  _BV(0); };
+  inline static void setSS()     { PORTB &= ~_BV(0); };
+  inline static void resetSS()   { PORTB |=  _BV(0); }; 
 #elif defined(__AVR_ATmega32U4__)
   inline static void initSS()    { DDRB  |=  _BV(6); };
   inline static void setSS()     { PORTB &= ~_BV(6); };
@@ -350,6 +373,10 @@ private:
   inline static void initSS()    { DDRB  |=  _BV(0); };
   inline static void setSS()     { PORTB &= ~_BV(0); };
   inline static void resetSS()   { PORTB |=  _BV(0); }; 
+#elif defined(__MK20DX128__) || defined(__MK20DX256__)
+  inline static void initSS()    { pinMode(10, OUTPUT); };
+  inline static void setSS()     { digitalWriteFast(10, LOW); };
+  inline static void resetSS()   { digitalWriteFast(10, HIGH); };
 #elif defined(REL_GR_KURUMI) || defined(REL_GR_KURUMI_PROTOTYPE)
   inline static void initSS()    { pinMode(SS, OUTPUT); \
                                    digitalWrite(SS, HIGH); };
@@ -365,61 +392,8 @@ private:
 
 extern W5100Class W5100;
 
-uint8_t W5100Class::readSn(SOCKET _s, uint16_t _addr) {
-  return read(CH_BASE + _s * CH_SIZE + _addr);
-}
 
-uint8_t W5100Class::writeSn(SOCKET _s, uint16_t _addr, uint8_t _data) {
-  return write(CH_BASE + _s * CH_SIZE + _addr, _data);
-}
 
-uint16_t W5100Class::readSn(SOCKET _s, uint16_t _addr, uint8_t *_buf, uint16_t _len) {
-  return read(CH_BASE + _s * CH_SIZE + _addr, _buf, _len);
-}
+#endif //defined(W5100_ETHERNET_SHIELD)
 
-uint16_t W5100Class::writeSn(SOCKET _s, uint16_t _addr, uint8_t *_buf, uint16_t _len) {
-  return write(CH_BASE + _s * CH_SIZE + _addr, _buf, _len);
-}
-
-void W5100Class::getGatewayIp(uint8_t *_addr) {
-  readGAR(_addr);
-}
-
-void W5100Class::setGatewayIp(uint8_t *_addr) {
-  writeGAR(_addr);
-}
-
-void W5100Class::getSubnetMask(uint8_t *_addr) {
-  readSUBR(_addr);
-}
-
-void W5100Class::setSubnetMask(uint8_t *_addr) {
-  writeSUBR(_addr);
-}
-
-void W5100Class::getMACAddress(uint8_t *_addr) {
-  readSHAR(_addr);
-}
-
-void W5100Class::setMACAddress(uint8_t *_addr) {
-  writeSHAR(_addr);
-}
-
-void W5100Class::getIPAddress(uint8_t *_addr) {
-  readSIPR(_addr);
-}
-
-void W5100Class::setIPAddress(uint8_t *_addr) {
-  writeSIPR(_addr);
-}
-
-void W5100Class::setRetransmissionTime(uint16_t _timeout) {
-  writeRTR(_timeout);
-}
-
-void W5100Class::setRetransmissionCount(uint8_t _retry) {
-  writeRCR(_retry);
-}
-#endif
-
-#endif
+#endif // W5100_H_INCLUDED

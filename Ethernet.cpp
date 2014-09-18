@@ -2,6 +2,7 @@
  modified 12 Aug 2013
  by Soohwan Kim (suhwan@wiznet.co.kr)
 */
+#include "w5100.h"
 #include "Ethernet.h"
 #include "Dhcp.h"
 
@@ -19,8 +20,10 @@ int EthernetClass::begin(uint8_t *mac_address)
 
   // Initialise the basic info
   W5100.init();
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.setMACAddress(mac_address);
   W5100.setIPAddress(IPAddress(0,0,0,0).raw_address());
+  SPI.endTransaction();
 
   // Now try to get our config info from a DHCP server
   int ret = _dhcp->beginWithDHCP(mac_address);
@@ -28,9 +31,11 @@ int EthernetClass::begin(uint8_t *mac_address)
   {
     // We've successfully found a DHCP server and got our configuration info, so set things
     // accordingly
+    SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
     W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
     W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
     W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
+    SPI.endTransaction();
     _dnsServerAddress = _dhcp->getDnsServerIp();
   }
 
@@ -64,10 +69,12 @@ void EthernetClass::begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dn
 void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
 {
   W5100.init();
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.setMACAddress(mac);
   W5100.setIPAddress(local_ip._address);
   W5100.setGatewayIp(gateway._address);
   W5100.setSubnetMask(subnet._address);
+  SPI.endTransaction();
   _dnsServerAddress = dns_server;
 }
 
@@ -80,8 +87,10 @@ int EthernetClass::begin(void)
 
   // Initialise the basic info
   W5100.init();
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.setIPAddress(IPAddress(0,0,0,0).raw_address());
   W5100.getMACAddress(mac_address);
+  SPI.endTransaction();
   
   // Now try to get our config info from a DHCP server
   int ret = _dhcp->beginWithDHCP(mac_address);
@@ -89,9 +98,11 @@ int EthernetClass::begin(void)
   {
     // We've successfully found a DHCP server and got our configuration info, so set things
     // accordingly
+    SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
     W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
     W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
     W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
+    SPI.endTransaction();
     _dnsServerAddress = _dhcp->getDnsServerIp();
   }
 
@@ -124,11 +135,12 @@ void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server, IPAddress ga
 
 void EthernetClass::begin(IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet)
 {
-  byte mac_address[6] ={0,};
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.init();
   W5100.setIPAddress(local_ip._address);
   W5100.setGatewayIp(gateway._address);
   W5100.setSubnetMask(subnet._address);
+  SPI.endTransaction();
   _dnsServerAddress = dns_server;
 }
 #endif
@@ -145,9 +157,11 @@ int EthernetClass::maintain(){
       case DHCP_CHECK_RENEW_OK:
       case DHCP_CHECK_REBIND_OK:
         //we might have got a new IP.
+        SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
         W5100.setIPAddress(_dhcp->getLocalIp().raw_address());
         W5100.setGatewayIp(_dhcp->getGatewayIp().raw_address());
         W5100.setSubnetMask(_dhcp->getSubnetMask().raw_address());
+        SPI.endTransaction();
         _dnsServerAddress = _dhcp->getDnsServerIp();
         break;
       default:
@@ -161,21 +175,27 @@ int EthernetClass::maintain(){
 IPAddress EthernetClass::localIP()
 {
   IPAddress ret;
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.getIPAddress(ret.raw_address());
+  SPI.endTransaction();
   return ret;
 }
 
 IPAddress EthernetClass::subnetMask()
 {
   IPAddress ret;
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.getSubnetMask(ret.raw_address());
+  SPI.endTransaction();
   return ret;
 }
 
 IPAddress EthernetClass::gatewayIP()
 {
   IPAddress ret;
+  SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   W5100.getGatewayIp(ret.raw_address());
+  SPI.endTransaction();
   return ret;
 }
 

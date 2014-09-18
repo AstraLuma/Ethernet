@@ -11,12 +11,26 @@
 #include <string.h>
 #include <avr/interrupt.h>
 
+#if defined(__arm__)
+#include "SPIFIFO.h"
+#ifdef  HAS_SPIFIFO
+#define USE_SPIFIFO
+#endif
+#endif
+
+#include "Arduino.h"
 
 #include "w5100.h"
 
 #if defined(W5100_ETHERNET_SHIELD)
 
 // W5100 controller instance
+uint16_t W5100Class::SBASE[MAX_SOCK_NUM];
+uint16_t W5100Class::RBASE[MAX_SOCK_NUM];
+uint16_t W5100Class::CH_BASE;
+uint16_t W5100Class::SSIZE;
+uint16_t W5100Class::SMASK;
+uint8_t  W5100Class::chip;
 W5100Class W5100;
 
 #define TX_RX_MAX_BUF_SIZE 2048
@@ -28,10 +42,18 @@ W5100Class W5100;
 
 void W5100Class::init(void)
 {
+  uint8_t i;
   delay(300);
+  //Serial.println("w5100 init");
 
+#ifdef USE_SPIFIFO
   SPI.begin();
+  SPIFIFO.begin(W5200_SS_PIN, SPI_CLOCK_12MHz);  // W5100 is 14 MHz max
+#else
+  SPI.begin();
+  SPI.setClockDivider(SPI_CLOCK_DIV2);
   initSS();
+#endif
   
   writeMR(1<<RST);
   writeTMSR(0x55);
@@ -40,6 +62,23 @@ void W5100Class::init(void)
   for (int i=0; i<MAX_SOCK_NUM; i++) {
     SBASE[i] = TXBUF_BASE + SSIZE * i;
     RBASE[i] = RXBUF_BASE + RSIZE * i;
+  }
+  SPI.endTransaction();
+  return 1; // successful init
+}
+
+void W5100Class::reset(void)
+{
+  uint16_t count=0;
+
+  //Serial.println("W5100 reset");
+  writeMR(1<<RST);
+  while (++count < 20) {
+    uint8_t mr = readMR();
+    //Serial.print("mr=");
+    //Serial.println(mr, HEX);
+    if (mr == 0) break;
+    delay(1);
   }
 }
 
@@ -101,7 +140,7 @@ void W5100Class::recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uin
 {
   uint16_t ptr;
   ptr = readSnRX_RD(s);
-  read_data(s, (uint8_t *)ptr, data, len);
+  read_data(s, ptr, data, len);
   if (!peek)
   {
     ptr += len;
@@ -109,7 +148,7 @@ void W5100Class::recv_data_processing(SOCKET s, uint8_t *data, uint16_t len, uin
   }
 }
 
-void W5100Class::read_data(SOCKET s, volatile uint8_t *src, volatile uint8_t *dst, uint16_t len)
+void W5100Class::read_data(SOCKET s, uint16_t src, volatile uint8_t *dst, uint16_t len)
 {
   uint16_t size;
   uint16_t src_mask;
@@ -130,6 +169,21 @@ void W5100Class::read_data(SOCKET s, volatile uint8_t *src, volatile uint8_t *ds
 }
 
 
+#ifdef USE_SPIFIFO
+uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
+{
+  uint32_t i;
+
+  for (i=0; i<len; i++) {
+    SPIFIFO.write16(0xF000 | (addr >> 8), SPI_CONTINUE);
+    SPIFIFO.write16((addr << 8) | buf[i]);
+    addr++;
+    SPIFIFO.read();
+    SPIFIFO.read();
+  }
+  return len;
+}
+#else
 uint8_t W5100Class::write(uint16_t _addr, uint8_t _data)
 {
   setSS();  
@@ -140,6 +194,7 @@ uint8_t W5100Class::write(uint16_t _addr, uint8_t _data)
   resetSS();
   return 1;
 }
+#endif
 
 uint16_t W5100Class::write(uint16_t _addr, const uint8_t *_buf, uint16_t _len)
 {
@@ -156,17 +211,35 @@ uint16_t W5100Class::write(uint16_t _addr, const uint8_t *_buf, uint16_t _len)
   return _len;
 }
 
-uint8_t W5100Class::read(uint16_t _addr)
-{
-  setSS();  
-  SPI.transfer(0x0F);
-  SPI.transfer(_addr >> 8);
-  SPI.transfer(_addr & 0xFF);
-  uint8_t _data = SPI.transfer(0);
-  resetSS();
-  return _data;
-}
+#endif
 
+#ifdef USE_SPIFIFO
+uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
+{
+  uint32_t i;
+
+  for (i=0; i<len; i++) {
+    #if 1
+    SPIFIFO.write(0x0F, SPI_CONTINUE);
+    SPIFIFO.write16(addr, SPI_CONTINUE);
+    addr++;
+    SPIFIFO.read();
+    SPIFIFO.write(0);
+    SPIFIFO.read();
+    buf[i] = SPIFIFO.read();
+	#endif
+    #if 0
+    // this does not work, but why?
+    SPIFIFO.write16(0x0F00 | (addr >> 8), SPI_CONTINUE);
+    SPIFIFO.write16(addr << 8);
+    addr++;
+    SPIFIFO.read();
+    buf[i] = SPIFIFO.read();
+    #endif
+  }
+  return len;
+}
+#else
 uint16_t W5100Class::read(uint16_t _addr, uint8_t *_buf, uint16_t _len)
 {
   for (uint16_t i=0; i<_len; i++)
@@ -181,6 +254,7 @@ uint16_t W5100Class::read(uint16_t _addr, uint8_t *_buf, uint16_t _len)
   }
   return _len;
 }
+#endif
 
 void W5100Class::execCmdSn(SOCKET s, SockCMD _cmd) {
   // Send command to socket
@@ -190,4 +264,4 @@ void W5100Class::execCmdSn(SOCKET s, SockCMD _cmd) {
     ;
 }
 
-#endif
+#endif // defined(W5100_ETHERNET_SHIELD)

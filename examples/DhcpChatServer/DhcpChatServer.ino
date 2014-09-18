@@ -40,7 +40,6 @@ EthernetServer server(23);
 boolean gotAMessage = false; // whether or not you got a message from the client yet
 
 void setup() {
- 
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
   // this check is only needed on the Leonardo:

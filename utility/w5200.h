@@ -132,7 +132,7 @@ public:
    * the data from Receive buffer. Here also take care of the condition while it exceed
    * the Rx memory uper-bound of socket.
    */
-  void read_data(SOCKET s, volatile uint8_t * src, volatile uint8_t * dst, uint16_t len);
+  void read_data(SOCKET s, uint16_t src, volatile uint8_t * dst, uint16_t len);
   
   /**
    * @brief	 This function is being called by send() and sendto() function also. 
@@ -151,7 +151,7 @@ public:
    *        in from TX_WR
    * @return New value for ptr, to be used in the next call
    */
-// FIXME Update documentation
+  // FIXME Update documentation
   void send_data_processing_offset(SOCKET s, uint16_t data_offset, const uint8_t *data, uint16_t len);
 
   /**
@@ -184,7 +184,7 @@ public:
   uint16_t getRXReceivedSize(SOCKET s);
   
 
-  // W5100 Registers
+  // W5200 Registers
   // ---------------
 private:
   static uint8_t write(uint16_t _addr, uint8_t _data);
@@ -235,7 +235,7 @@ public:
 #undef __GP_REGISTER16
 #undef __GP_REGISTER_N
 
-  // W5100 Socket registers
+  // W5200 Socket registers
   // ----------------------
 private:
   static inline uint8_t readSn(SOCKET _s, uint16_t _addr);

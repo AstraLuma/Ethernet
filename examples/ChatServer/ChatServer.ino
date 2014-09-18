@@ -53,7 +53,7 @@ void setup() {
    while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
-  
+
 
   Serial.print("Chat server address:");
   Serial.println(Ethernet.localIP());

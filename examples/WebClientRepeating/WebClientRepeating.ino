@@ -41,7 +41,6 @@ IPAddress gwip(1,1,1,1);
 IPAddress snip(1,1,1,1);
 IPAddress myDns(1,1,1,1);
 
-
 // initialize the library instance:
 EthernetClient client;
 
@@ -50,7 +49,6 @@ char server[] = "www.arduino.cc";
 unsigned long lastConnectionTime = 0;          // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                 // state of the connection last time through the main loop
 const unsigned long postingInterval = 60*1000;  // delay between updates, in milliseconds
-
 
 void setup() {
   // start serial port:
