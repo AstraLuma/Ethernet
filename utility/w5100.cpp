@@ -38,8 +38,8 @@ W5100Class Wiznet;
 
 const uint16_t W5100Class::CH_BASE = 0x4000;
 const uint16_t W5100Class::CH_SIZE = 0x0100;
-uint16_t W5100Class::SBASE[W5100Class::SOCKETS] = {0,};
-uint16_t W5100Class::RBASE[W5100Class::SOCKETS] = {0,};
+uint16_t W5100Class::SBASE[W5100Class::SOCKETS] = {0,0,0,0};
+uint16_t W5100Class::RBASE[W5100Class::SOCKETS] = {0,0,0,0};
 
 uint8_t W5100Class::init(void)
 {

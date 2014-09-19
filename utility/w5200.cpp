@@ -27,8 +27,8 @@ W5200Class Wiznet;
 
 const uint16_t W5200Class::CH_BASE = 0x4000;
 const uint16_t W5200Class::CH_SIZE = 0x0100;
-uint16_t W5200Class::SBASE[W5200Class::SOCKETS] = {0,};
-uint16_t W5200Class::RBASE[W5200Class::SOCKETS] = {0,};
+uint16_t W5200Class::SBASE[W5200Class::SOCKETS] = {0,0,0,0,0,0,0,0};
+uint16_t W5200Class::RBASE[W5200Class::SOCKETS] = {0,0,0,0,0,0,0,0};
 
 uint8_t W5200Class::init(void)
 {
