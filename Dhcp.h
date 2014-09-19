@@ -44,7 +44,9 @@
 #define MAGIC_COOKIE		0x63825363
 #define MAX_DHCP_OPT	16
 
+#ifndef HOST_NAME
 #define HOST_NAME "WIZnet"
+#endif
 #define DEFAULT_LEASE	(900) //default lease time in seconds
 
 #define DHCP_CHECK_NONE         (0)
