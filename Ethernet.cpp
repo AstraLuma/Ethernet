@@ -5,6 +5,7 @@
 #include "wiznet.h"
 #include "Ethernet.h"
 #include "Dhcp.h"
+#include "util.h"
 
 // XXX: don't make assumptions about the value of MAX_SOCK_NUM.
 uint8_t EthernetClass::_state[MAX_SOCK_NUM] = { 
@@ -78,7 +79,7 @@ void EthernetClass::begin(uint8_t *mac, IPAddress local_ip, IPAddress dns_server
   _dnsServerAddress = dns_server;
 }
 
-#if defined(WIZ550io_WITH_MACADDRESS)
+#if defined(USE_BURNED_MACADDRESS)
 int EthernetClass::begin(void)
 {
   byte mac_address[6] ={0,};
@@ -91,9 +92,27 @@ int EthernetClass::begin(void)
   Wiznet.setIPAddress(IPAddress(0,0,0,0).raw_address());
   Wiznet.getMACAddress(mac_address);
   SPI.endTransaction();
-  
+
+  WIZNET_DEBUG("MAC Address: ");
+  WIZNET_DEBUG(mac_address[0], HEX);
+  WIZNET_DEBUG(":");
+  WIZNET_DEBUG(mac_address[1], HEX);
+  WIZNET_DEBUG(":");
+  WIZNET_DEBUG(mac_address[2], HEX);
+  WIZNET_DEBUG(":");
+  WIZNET_DEBUG(mac_address[3], HEX);
+  WIZNET_DEBUG(":");
+  WIZNET_DEBUG(mac_address[4], HEX);
+  WIZNET_DEBUG(":");
+  WIZNET_DEBUG(mac_address[5], HEX);
+  WIZNET_DEBUGLN();
+
   // Now try to get our config info from a DHCP server
   int ret = _dhcp->beginWithDHCP(mac_address);
+
+  WIZNET_DEBUG("DHCP Return: ");
+  WIZNET_DEBUGLN(ret);
+
   if(ret == 1)
   {
     // We've successfully found a DHCP server and got our configuration info, so set things

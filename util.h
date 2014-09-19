@@ -10,4 +10,13 @@
                    ((x)>>24 & 0x000000FFUL) )
 #define ntohl(x) htonl(x)
 
+#if __DEBUG_WIZNET__        
+#define WIZNET_DEBUG(...) Serial.print(__VA_ARGS__)
+#define WIZNET_DEBUGLN(...) Serial.println(__VA_ARGS__)
+#else
+#define WIZNET_DEBUG(...)
+#define WIZNET_DEBUGLN(...)
+#endif
+
+
 #endif

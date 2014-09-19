@@ -47,6 +47,7 @@ int DhcpClass::request_DHCP_lease(){
     if (_dhcpUdpSocket.begin(DHCP_CLIENT_PORT) == 0)
     {
       // Couldn't get a socket
+      WIZNET_DEBUGLN("DhcpClass::request_DHCP_lease: Couldn't open socket");
       return 0;
     }
     
@@ -117,8 +118,10 @@ int DhcpClass::request_DHCP_lease(){
             _dhcp_state = STATE_DHCP_START;
         }
         
-        if(result != 1 && ((millis() - startTime) > _timeout))
+        if(result != 1 && ((millis() - startTime) > _timeout)) {
+            WIZNET_DEBUGLN("DhcpClass::request_DHCP_lease: Time out");
             break;
+        }
     }
     
     // We're done with the socket now
@@ -140,6 +143,7 @@ void DhcpClass::send_DHCP_MESSAGE(uint8_t messageType, uint16_t secondsElapsed)
 
     if (-1 == _dhcpUdpSocket.beginPacket(dest_addr, DHCP_SERVER_PORT))
     {
+        WIZNET_DEBUGLN("DhcpClass::end_DHCP_MESSAGE: beginPacket failed");
         // FIXME Need to return errors
         return;
     }
@@ -261,6 +265,7 @@ uint8_t DhcpClass::parseDHCPResponse(unsigned long responseTimeout, uint32_t& tr
     {
         if((millis() - startTime) > responseTimeout)
         {
+            WIZNET_DEBUGLN("DhcpClass::parseDHCPResponse: Timeout");
             return 255;
         }
         delay(50);

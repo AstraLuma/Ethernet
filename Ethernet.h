@@ -28,7 +28,7 @@ public:
   void begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server, IPAddress gateway);
   void begin(uint8_t *mac_address, IPAddress local_ip, IPAddress dns_server, IPAddress gateway, IPAddress subnet);
 
-#if defined(WIZ550io_WITH_MACADDRESS)
+#if defined(USE_BURNED_MACADDRESS)
   // Initialize function when use the ioShield serise (included WIZ550io)
   // WIZ550io has a MAC address which is written after reset.
   // Default IP, Gateway and subnet address are also writen.
