@@ -31,14 +31,19 @@
 #include "Ethernet.h"
 #include "Udp.h"
 #include "Dns.h"
+#include "util.h"
+
+#define INVALID_SOCKET ((uint8_t)-1)
 
 /* Constructor */
-EthernetUDP::EthernetUDP() : _sock(MAX_SOCK_NUM) {}
+EthernetUDP::EthernetUDP() : _sock(INVALID_SOCKET) {}
 
 /* Start EthernetUDP socket, listening at local port PORT */
 uint8_t EthernetUDP::begin(uint16_t port) {
-  if (_sock != MAX_SOCK_NUM)
+  if (_sock != INVALID_SOCKET) {
+    WIZNET_DEBUGLN("EthernetUDP::begin: called on started socket");
     return 0;
+  }
 
   for (int i = 0; i < MAX_SOCK_NUM; i++) {
     uint8_t s = socketStatus(i);
@@ -48,8 +53,10 @@ uint8_t EthernetUDP::begin(uint16_t port) {
     }
   }
 
-  if (_sock == MAX_SOCK_NUM)
+  if (_sock == MAX_SOCK_NUM) {
+    WIZNET_DEBUGLN("EthernetUDP::begin: Ran out of sockets (MAX_SOCK_NUM exceeded)");
     return 0;
+  }
 
   _port = port;
   _remaining = 0;
@@ -67,13 +74,15 @@ int EthernetUDP::available() {
 /* Release any resources being used by this EthernetUDP instance */
 void EthernetUDP::stop()
 {
-  if (_sock == MAX_SOCK_NUM)
+  if (_sock == INVALID_SOCKET) {
+    WIZNET_DEBUGLN("EthernetUDP::stop: Called on stopped socket");
     return;
+  }
 
   close(_sock);
 
   EthernetClass::_server_port[_sock] = 0;
-  _sock = MAX_SOCK_NUM;
+  _sock = INVALID_SOCKET;
 }
 
 int EthernetUDP::beginPacket(const char *host, uint16_t port)
@@ -88,6 +97,8 @@ int EthernetUDP::beginPacket(const char *host, uint16_t port)
   if (ret == 1) {
     return beginPacket(remote_addr, port);
   } else {
+    WIZNET_DEBUG("EthernetUDP::beginPacket: DNS failed: ");
+    WIZNET_DEBUGLN(ret);
     return ret;
   }
 }
