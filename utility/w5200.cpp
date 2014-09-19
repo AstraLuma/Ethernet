@@ -39,11 +39,11 @@ uint8_t W5200Class::init(void)
   
   writeMR(1<<RST);
   
-  for (int i=0; i<MAX_SOCK_NUM; i++) {
+  for (int i=0; i<SOCKETS; i++) {
     write((0x4000 + i * 0x100 + 0x001F), 2);
     write((0x4000 + i * 0x100 + 0x001E), 2);
   }
-  for (int i=0; i<MAX_SOCK_NUM; i++) {
+  for (int i=0; i<SOCKETS; i++) {
     SBASE[i] = TXBUF_BASE + SSIZE * i;
     RBASE[i] = RXBUF_BASE + RSIZE * i;
   }

@@ -59,7 +59,7 @@ uint8_t W5100Class::init(void)
   writeTMSR(0x55);
   writeRMSR(0x55);
 
-  for (int i=0; i<MAX_SOCK_NUM; i++) {
+  for (int i=0; i<SOCKETS; i++) {
     SBASE[i] = TXBUF_BASE + SSIZE * i;
     RBASE[i] = RXBUF_BASE + RSIZE * i;
   }
